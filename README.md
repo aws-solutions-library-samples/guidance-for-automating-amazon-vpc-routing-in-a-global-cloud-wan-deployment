@@ -29,7 +29,7 @@ This sample project is meant to be deployed to a single account and multiple reg
 1. Download the code and cd sample-ipam-cf directory. 
 
 ```bash
-git clone https://github.com/labeveryday/sample-ipam-cf.git && cd sample-ipam-cf
+git clone https://github.com/aws-solutions-library-samples/guidance-for-end-to-end-fully-automated-global-network-on-aws.git && cd guidance-for-end-to-end-fully-automated-global-network-on-aws
 ```
 
 2. Deploy the CloudFormation stacks.
