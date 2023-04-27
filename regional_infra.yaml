@@ -27,6 +27,8 @@ Resources:
           Value: !Ref VPCTagValue
         - Key: project
           Value: cloud-wan-demo
+        - Key: Department
+          Value: !Ref VPCTagValue
   
   VPCPrivateSubnet:
     Type: AWS::EC2::Subnet
