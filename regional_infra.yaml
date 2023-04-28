@@ -361,9 +361,6 @@ Resources:
           - "aws.networkmanager"
         detail-type: 
           - "Network Manager Topology Change"
-        detail: 
-          changeType: 
-            - "VPC_ATTACHMENT_CREATED"
       Targets: 
         - Arn: !GetAtt LambdaUpdateRT.Arn
           Id: !Ref LambdaUpdateRT
