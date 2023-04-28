@@ -199,48 +199,75 @@ Resources:
           import urllib
           import logging
           from botocore.vendored import requests
-
+          
           ec2 = boto3.client('ec2')
           ec2r = boto3.resource('ec2')
           nm = boto3.client('networkmanager')
           logger = logging.getLogger(__name__)
-
+          
           def lambda_handler(event, context):
-              #print("Event json passed to lambda: " + json.dumps(event, indent=2))
-              #print (event["detail"]["changeType"])
               try:
-                  #print ("PRINTING DEFAULT ROUTE TABLE NOW.")
-                  if event["detail"]["changeType"] == "VPC_ATTACHMENT_CREATED":
-                      #print ("VPC add event detected. Updating default routing table.")
+                  if event["detail"]["changeType"] == "VPC_ATTACHMENT_CREATED" or event["detail"]["changeType"] == "VPC_ATTACHMENT_DELETED":
                       vpcId = event["detail"]["vpcArn"].split("/")[1]
                       coreNetworkArn = event["detail"]["coreNetworkArn"]
-                      defrt = get_vpc(vpcId)
+                      def_route_table = get_vpc_route_table_id(vpcId)
                       print ("PRINTING DEFAULT ROUTE TABLE NOW.")
-                      print(defrt)
-
-                      #vpcarn = (event["detail"]["vpcArn"])
+                      print(def_route_table)
                       attachmentId = event["detail"]["attachmentArn"].split("/")[1]
                       print ("ATTACHMENT ID IS.")
                       print (attachmentId)
-                      attachment_tag = get_attachment_tag(attachmentId)
-                      print ("ATTACHMENT TAG IS.")
-                      print (attachment_tag)
-                      cidr = get_cidr(attachment_tag)
-                      # Updates made to working lambda on Apr-25
-                      plid = create_pl(attachment_tag, cidr)
-                      add_route(defrt, plid, coreNetworkArn)
-                      #add_route(defrt, cidr, coreNetworkArn)
+                      if event["detail"]["changeType"] == "VPC_ATTACHMENT_DELETED":
+                          department_tag = get_vpc_tag(vpcId)
+                          prefix_list_id = get_prefix_list_id(department_tag)
+                          delete_route(def_route_table, prefix_list_id)
+                      else:
+                          attachment_tag = get_attachment_tag(attachmentId)
+                          print ("ATTACHMENT TAG IS.")
+                          print (attachment_tag)
+                          cidr = get_cidr(attachment_tag)
+                          prefix_list_id = create_prefix_list(attachment_tag, cidr)
+                          add_route(def_route_table, prefix_list_id, coreNetworkArn)
                   else:
                       print (event["detail"]["changeType"])
               except Exception as e:
                   logger.info(format(e))
               return {
                   'statusCode': 200,
-                  #'body': json.dumps('Hello from Lambda!')
               }
-
-          def get_vpc(VPCID):
-              print ("Inside get_vpc")
+              
+          
+          def get_prefix_list_id(department_tag):
+              print ("Inside get_prefix_list_id for vpc attachment delete workflow")
+              try:
+                  pl = ec2.describe_managed_prefix_lists(Filters=[{'Name': 'prefix-list-name', 'Values': [department_tag]}])
+                  print ("Prefix list ID is:")
+                  print (pl["PrefixLists"][0]["PrefixListId"])
+                  return (pl["PrefixLists"][0]["PrefixListId"])
+              except Exception as e:
+                  logger.info('ERROR IS: {}'.format(e))
+          
+          
+          def get_vpc_tag(vpcId):
+              print ("Inside get_vpc_tag.")
+              response = ec2.describe_vpcs(
+                  Filters=[
+                      {
+                          'Name': 'tag-key',
+                          'Values': [ 'Department' ]
+                      }
+                  ],
+                  VpcIds=[ vpcId ]
+              )
+              taglist = response['Vpcs'][0]['Tags']
+              department_tag = 'NULL'
+              for i in taglist:
+                  if i['Key'] == 'Department':
+                      department_tag = i['Value']
+              return department_tag
+                  
+              
+          def get_vpc_route_table_id(VPCID):
+              print ("Inside get_vpc_route_table_id")
               print (VPCID)
               response = ec2.describe_route_tables(
                 Filters=[
@@ -258,12 +285,11 @@ Resources:
               RouteTableID=response['RouteTables'][0]['RouteTableId']
               print(RouteTableID)
               return RouteTableID
-
+          
           def get_attachment_tag(ATTACHMENT_ID):
               print ("Inside get_attachment_tag.")
               try:
                   response2 = nm.get_vpc_attachment(AttachmentId=ATTACHMENT_ID)
-                  #print (response2)
                   tagList = response2["VpcAttachment"]["Attachment"]["Tags"]
                   d = next((d for d in tagList if d.get("Key") == "Department"), None)
                   print (d["Value"])
@@ -277,7 +303,6 @@ Resources:
               ec2 = boto3.client('ec2', region_name='us-east-1')
               poolResponse = ec2.describe_ipam_pools()
               pools = poolResponse["IpamPools"]
-              #print(pools)
               for i in pools:
                   for tags in i["Tags"]:
                       if ATTACHMENT_TAG in tags.values():
@@ -287,33 +312,44 @@ Resources:
               cidr = ec2.get_ipam_pool_cidrs(IpamPoolId=poolId)["IpamPoolCidrs"][0]["Cidr"]
               print (cidr)
               return cidr
-    
-          def add_route(defrt, plid, coreNetworkArn):
+          
+          def add_route(def_route_table, prefix_list_id, coreNetworkArn):
               print ("Inside add_route")
-              print (plid)
+              print (prefix_list_id)
               try: 
-                  defrtobj = ec2r.RouteTable(defrt)
-                  route_obj = defrtobj.create_route(DestinationPrefixListId=plid, CoreNetworkArn=coreNetworkArn)
+                  def_route_tableobj = ec2r.RouteTable(def_route_table)
+                  route_obj = def_route_tableobj.create_route(DestinationPrefixListId=prefix_list_id, CoreNetworkArn=coreNetworkArn)
                   print ("JOB DONE!")
               except Exception as e:
                   logger.info('ERROR IS: {}'.format(e))
-                  
-          def create_pl(plname, cidr):
-              print ("Inside create_pl")
-              print (plname)
+          
+          def delete_route(def_route_table, prefix_list_id):
+              print ("Inside delete_route")
               try:
-                  existing_pl = ec2.describe_managed_prefix_lists(Filters=[{'Name': 'prefix-list-name', 'Values': [plname]}])
+                  delete_route_obj = ec2.delete_route(DestinationPrefixListId=prefix_list_id, RouteTableId=def_route_table)
+                  print ("Route from VPC routing table deleted")
+              except Exception as e:
+                  logger.info('ERROR IS: {}'.format(e))
+                  
+          def create_prefix_list(attachment_tag, cidr):
+              print ("Inside create_prefix_list")
+              print (attachment_tag)
+              try:
+                  existing_pl = ec2.describe_managed_prefix_lists(Filters=[{'Name': 'prefix-list-name', 'Values': [attachment_tag]}])
                   print (existing_pl["PrefixLists"])
                   if (existing_pl["PrefixLists"]):
                       print ("PL EXISTS.")
                       print (existing_pl["PrefixLists"][0]["PrefixListId"])
-                      return existing_pl["PrefixLists"][0]["PrefixListId"]
+                      existing_prefix_list_id = existing_pl["PrefixLists"][0]["PrefixListId"]
+                      return existing_prefix_list_id
                   else:
                       route_entry = [{'Cidr': cidr, 'Description': 'Fetched from VPC IPAM'}]
-                      pl = ec2.create_managed_prefix_list(PrefixListName=plname, Entries=route_entry, MaxEntries=10, AddressFamily='IPv4')
-                      return pl["PrefixList"]["PrefixListId"]
+                      pl = ec2.create_managed_prefix_list(PrefixListName=attachment_tag, Entries=route_entry, MaxEntries=10, AddressFamily='IPv4')
+                      new_prefix_list_id = pl["PrefixList"]["PrefixListId"]
+                      return new_prefix_list_id
               except Exception as e:
                   logger.info('ERROR IS: {}'.format(e))
+
 
 # ---------- EventBridge Rule ----------
   EventRule: 
