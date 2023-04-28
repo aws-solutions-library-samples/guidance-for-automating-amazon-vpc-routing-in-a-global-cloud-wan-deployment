@@ -16,6 +16,8 @@ Whenever a VPC's attachment to Cloud WAN is created, this solution detects the '
 
 ## Prerequisites:
 
+- Working knowledge of [AWS Cloud WAN] (https://docs.aws.amazon.com/network-manager/latest/cloudwan/what-is-cloudwan.html
+)
 - An [AWS account](https://signin.aws.amazon.com/signin?redirect_uri=https%3A%2F%2Fportal.aws.amazon.com%2Fbilling%2Fsignup%2Fresume&client_id=signup&code_challenge_method=SHA-256&code_challenge=0HQWGyGWYR-1yDUXafaSt2wlhL8OZGAHfZx3sDZN4mE) that you are able to use for testing, that is not used for production or other purposes. NOTE: You will be billed for any applicable AWS resources used if you complete this lab that are not covered in the [AWS Free Tier](https://aws.amazon.com/free/?all-free-tier.sort-by=item.additionalFields.SortRank&all-free-tier.sort-order=asc&awsf.Free%20Tier%20Types=*all&awsf.Free%20Tier%20Categories=*all).
 
 - To deploy this solution you will have to have the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) installed.
@@ -26,7 +28,7 @@ Whenever a VPC's attachment to Cloud WAN is created, this solution detects the '
 
 This sample project is meant to be deployed to a single account and multiple regions. By default, AWS regions us-east-1, us-west-2 and ap-southeast-1 are in use.
 
-1. Download the code and cd sample-ipam-cf directory. 
+1. Download the code and navigate to the correct directory. 
 
 ```bash
 git clone https://github.com/aws-solutions-library-samples/guidance-for-end-to-end-fully-automated-global-network-on-aws.git && cd guidance-for-end-to-end-fully-automated-global-network-on-aws
@@ -48,7 +50,7 @@ After the VPC has been attached to Cloud WAN give the solution about 5-10 minute
 2. In ap-southeast-1 open the [EC2 console](https://ap-southeast-1.console.aws.amazon.com/ec2/home?region=ap-southeast-1#Instances:instanceState=running) and copy the private ip of the instance. 
 3. In the ec2 SSM terminal window type `ping ` and then paste the private ip address of the instance in ap-southeast-1.
 
-You now have global end-to-end routing in AWS!
+You now have dynamic end-to-end routing in AWS even when your VPCs are deployed in different AWS Regions!
 
 >For additional verification you can check the default routing tables in the hr vpcs in both regions. You will notice a prefix list that was added when your VPC was attached to Cloud WAN.  
 
@@ -72,7 +74,9 @@ This section not needed if you deployed step 1. It is to deploy each stack indiv
 
 ### Considerations
 1. This solution is useful when your VPCs have multiple exit points. In the scenario drawing, each VPC has 2 exit points. One towards the Cloud WAN core-network, and second towards AWS Direct Connect gateway
-2. In addition to the networking constructs, there's pricing associated with EventBridge and with Lambda. Please check out service pricing pages for more details
+2. In addition to the networking constructs, there's pricing associated with [EventBridge] (https://aws.amazon.com/eventbridge/pricing/) and with [Lambda] (https://aws.amazon.com/lambda/pricing/). Please check out service pricing pages for more details
+3. This solution uses VPC IPAM to store CIDRs for storing department specific CIDRs. When enabled, VPC IPAM imports all IP addressing data from an existing deployment, and charges an hourly rate for every active IP address. Please check out [VPC IPAM pricing] (https://aws.amazon.com/vpc/pricing/) for more details
+
 
 ## References
 
