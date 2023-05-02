@@ -1,0 +1,82 @@
+# Deploy in us-west-2
+Parameters:
+  RegionalEventBridgeArn:
+    Description: Arn of EventBridge
+    Type: String
+
+Resources:
+# ---------- EventBridge Rule ----------
+  VPCAttachmentCreatedEventRule: 
+    Type: AWS::Events::Rule
+    Properties: 
+      Description: "EventRule to trigger lambda function when Cloud VPC attachment is created."
+      EventPattern: 
+        source: 
+          - "aws.networkmanager"
+        detail-type: 
+          - "Network Manager Topology Change"
+        detail: 
+          changeType: 
+            - "VPC_ATTACHMENT_CREATED"
+      Targets: 
+        - Arn:
+            !Ref RegionalEventBridgeArn
+          Id: "default"
+          RoleArn: !GetAtt EventBridgeIAMrole.Arn
+  
+  VPCAttachmentDeletedEventRule: 
+    Type: AWS::Events::Rule
+    Properties: 
+      Description: "EventRule to trigger lambda function  when Cloud VPC attachment is deleted."
+      EventPattern: 
+        source: 
+          - "aws.networkmanager"
+        detail-type: 
+          - "Network Manager Topology Change"
+        detail: 
+          changeType: 
+            - "VPC_ATTACHMENT_DELETED"
+      Targets: 
+        - Arn:
+            !Ref RegionalEventBridgeArn
+          Id: "default"
+          RoleArn: !GetAtt EventBridgeIAMrole.Arn
+  
+  EventBridgeIAMrole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              !Sub events.amazonaws.com
+          Action: sts:AssumeRole
+      Path: /
+      Policies:
+      - PolicyName: PutEventsDestinationBus
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - events:PutEvents
+            Resource:
+            - !Ref EventBridgeArn
+
+# ---------- Outputs ----------
+Outputs:
+  VPCAttachmentCreatedEventBridgeRuleArn:
+    Value: !GetAtt VPCAttachmentCreatedEventRule.Arn
+    Description: EventBridge Bus Arn
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-VPCAttachmentCreatedEventBusArn"
+  
+  VPCAttachmentDeletedEventBridgeRuleArn:
+    Value: !GetAtt VPCAttachmentDeletedEventRule.Arn
+    Description: EventBridge Bus Arn
+    Export:
+      Name:
+        Fn::Sub: "${AWS::StackName}-VPCAttachmentDeletedEventBusArn"
