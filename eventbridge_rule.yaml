@@ -63,7 +63,7 @@ Resources:
             Action:
             - events:PutEvents
             Resource:
-            - !Ref EventBridgeArn
+            - !Ref RegionalEventBridgeArn
 
 # ---------- Outputs ----------
 Outputs:

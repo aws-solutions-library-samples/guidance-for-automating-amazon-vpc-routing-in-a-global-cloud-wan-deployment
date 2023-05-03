@@ -100,7 +100,7 @@ After you complete these steps, this solution will automate the addition (or del
 
 ### Step 1: Create your IPAM deployment
 
-This solution uses VPC IPAM to store the CIDRs that are needed for populating VPC's routing tables. To use this solution for an exsiting or customized deployment, the first step is to create VPC IPAM Pools. Check out [VPC IPAM documentation](https://docs.aws.amazon.com/vpc/latest/ipam/what-it-is-ipam.html) for details on how to create VPC IPAM pools.
+This solution uses VPC IPAM to store the CIDRs that are needed for populating VPC's routing tables. To use this solution for an exsiting or customized deployment, the first step is to create VPC IPAM Pools in each of your target Regions. These pools should include the CIDR that you'd like to be pushed into VPCs' routing tables when you attach those VPCs into Cloud WAN segments. Check out [VPC IPAM documentation](https://docs.aws.amazon.com/vpc/latest/ipam/what-it-is-ipam.html) for details on how to create VPC IPAM pools.
 
 Make a note of the VPC IPAM Pools' names. You'll use the same name as tag while creating VPC attachments into Cloud WAN. 
 
