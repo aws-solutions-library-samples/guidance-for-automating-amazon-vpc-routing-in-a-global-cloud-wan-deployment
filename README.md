@@ -1,14 +1,16 @@
-## AWS Cloud WAN and VPC IPAM integration for end-to-end automated routing
+## AWS Cloud WAN and VPC IPAM integration for automating VPC routing tables
 
-AWS Cloud WAN is a service that you can use to build, manage, and monitor a unified global network that connects resources running across your cloud and on-premises environments. Cloud WAN ensures dynamic route propagation across multiple regions. So for a sample deployment that spans across 2 regions: you'll create VPC attachments into Cloud WAN segments. Cloud WAN will ensure that each VPC's CIDR is dynamically learned across regions. To ensure that end to end connectivity works between your VPCs, you'll need to update the routing tables of the VPCs to provide network connectivity for workloads that reside within the VPCs. This is illustrated in Figure-1 below:
+AWS Cloud WAN is a service that you can use to build, manage, and monitor a unified global network that connects resources running across your cloud and on-premises environments. Cloud WAN ensures dynamic route propagation across multiple regions. For a sample deployment that spans across 2 regions: you'll create VPC attachments into Cloud WAN segments. Cloud WAN will ensure that each VPC's CIDR is dynamically propagated across regions. To ensure that bi-directional connectivity works between your VPCs, you'll need to update each VPCs' routing tables to provide network connectivity for workloads that reside within the VPCs. This is illustrated in Figure-1 below:
 
 ![Figure-1: Updating VPC routing tables](./img/Figure-1.png)
 
-In this Guidance, we'll see how to automatically add (or delete) routes to VPC routing tables every time a VPC is attached into (or deleted from) a Cloud WAN segment. This will provide you with a fully automated end-to-end routing solution wherein workloads residing within VPCs have network connectivity to each other irrespective of the region where a VPC resides.
+In this Guidance, you'll see how to automatically add (or delete) routes to VPC routing tables every time a VPC is attached into (or removed from) a Cloud WAN segment. This will provide you with an automated end-to-end routing solution wherein workloads residing within VPCs have network connectivity to each other irrespective of which Region the VPC resides.
 
-This solution is event driven, in that the route addition/deletion is triggered when a VPC is attached into (or detached from) a Cloud WAN segment.
+This solution is event driven, in that the route addition/deletion is triggered when a VPC is attached into (or removed from) a Cloud WAN segment.
 
 ### Prerequisites:
+
+- Understanding of AWS network fundamentals like VPCs, subnets, routing tables, [VPC IPAM](https://docs.aws.amazon.com/vpc/latest/ipam/what-it-is-ipam.html), and [AWS Cloudformation](https://aws.amazon.com/cloudformation/)
 
 - Working knowledge of [AWS Cloud WAN](https://docs.aws.amazon.com/network-manager/latest/cloudwan/what-is-cloudwan.html)
 
@@ -20,7 +22,7 @@ This solution is event driven, in that the route addition/deletion is triggered 
 
 ## How this solution works
 
-Cloud WAN generates an event whenever a VPC attachment is created. The event has a JSON format and contains important information about the details of the VPC attachment. The structure of such an event is shown in Figure-3 below. 
+Cloud WAN generates an event whenever a VPC attachment is created. The event has a JSON format and contains important information about the details of the VPC attachment. The structure of such an event is shown in Figure-2 below. 
 
 >Note that the "changeType" key has a value of "VPC_ATTACHMENT_CREATED"
 
@@ -30,37 +32,45 @@ Cloud WAN generates an event whenever a VPC attachment is created. The event has
   "id": "13143a7e-806e-a904-300b-ef874c56eaac", 
   "detail-type": "Network Manager Topology Change", 
   "source": "aws.networkmanager", 
-  "account": "166889823465", 
+  "account": "<ACCOUNT-ID>", 
   "time": "2021-09-02T12:00:38Z", 
   "region": "us-west-2", 
   "resources": [ 
-    "arn:aws:networkmanager::166889823465:global-network/global-network-0de3af1d5c665d6d8", 
-    "arn:aws:networkmanager::166889823465:core-network/core-network-03ad314394f3f014d"   
+    "arn:aws:networkmanager::<ACCOUNT_ID>:global-network/global-network-0de3af1d5c665d6d8", 
+    "arn:aws:networkmanager::<ACCOUNT_ID>:core-network/core-network-03ad314394f3f014d"   
   ], 
   "detail": { 
     "changeType": "VPC_ATTACHMENT_CREATED", 
     "changeDescription": "A VPC attachment has been attached to a Core Network.", 
     "edgeLocation": "us-east-2", 
-    "attachmentArn": "arn:aws:networkmanager::166889823465:attachment/attachment-092077875ecbe596b",
+    "attachmentArn": "arn:aws:networkmanager::<ACCOUNT_ID>:attachment/attachment-092077875ecbe596b",
     "vpcArn": "arn:aws:ec2:us-east-2:212869205455:vpc/vpc-049a3a24f48fcc47d", 
-    "coreNetworkArn": "arn:aws:networkmanager::166889823465:core-network/core-network-03ad314394f3f014d"   
+    "coreNetworkArn": "arn:aws:networkmanager::<ACCOUNT_ID>:core-network/core-network-03ad314394f3f014d"   
   } 
 }
 ```
 
-Similarly, Cloud WAN generates an event every time a VPC is attachment is deleted. In such a case, the event's "changeType" key has a value of "VPC_ATTACHMENT_DELETED". Here is more information on [CloudWAN CloudWatch events](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-cloudwatch-events.html). 
+Similarly, Cloud WAN generates an event every time a VPC attachment is deleted. In such a case, the event's "changeType" key has a value of "VPC_ATTACHMENT_DELETED". Here is more information on [CloudWAN CloudWatch events](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-cloudwatch-events.html). 
 
-This solution uses Event Bridge and Lambda to detect the VPC_ATTACHMENT_CREATED and VPC_ATTACHMENT_DELETED events generated by Cloud WAN. Event Bridge then triggers a regional lambda function and passes the event's json object to the lambda function. The lambda function has the necessary logic that fetches the department specific CIDR from VPC IPAM. After getting the department CIDR, the Lambda function creates a Prefix List, and pushes a route into the VPC's routing table. The destination for this route is the Prefix List and the target for the route is the Cloud WAN core network.
+This solution uses Event Bridge and Lambda to detect the VPC_ATTACHMENT_CREATED and VPC_ATTACHMENT_DELETED events generated by Cloud WAN. Event Bridge then triggers a regional Lambda function and passes the event's JSON object to the Lambda function. The Lambda function has the necessary logic that fetches the department specific CIDR from VPC IPAM. After getting the department CIDR, the Lambda function creates a Prefix List, and pushes a route into the VPC's routing table. The destination for this route is the Prefix List and the target for the route is the Cloud WAN core network.
 
-The logical flow for this solution is shown in Figure-ABC below:
+The logical flow for this solution is shown in Figure-3 below:
 
 ![Cloud WAN Solution](./img/solution.png)
+The workflow is:
+1. User creates a VPC attachment into a Cloud WAN segment. The user tags the VPC attachment with a key:value pair (department:hr as shown in the diagram above)
+2. Cloud WAN generates an event in us-west-2. The event's changeType key has a value of "VPC_ATTACHMENT_CREATED"
+3. Event Bridge rule in us-west-2 traps this event, and sends it to target regions. The target regions have an Event Bridge rule that trigger a regional Lambda function. 
+4. Lambda function fetches the VPC attachment tag from the event, and checks if VPC IPAM has a pool that has the same tag. 
+5. If there's a match, Lambda function fetches the CIDR associated with the VPC IPAM pool
+6. Lambda function creates a Prefix List with an entry that includes the CIDR obtained in step# 5 above
+7. Lambda function updates the VPC's routing table. The destination for the route is the Prefix List that was created in step# 6 above, and the target of the route is the Cloud WAN core network.
 
 Whenever a VPC attachment is deleted, this solution detects that event and deletes the corresponding route from the VPC's routing table.
 
 ## Step by step instructions for a net new deployment
 
-We have provided step by step instructions fro a net-new deployment at [this page](./samples/README.md). Please use these instructions in case you'd like to test this solution out in a sansbox environment.
+We have provided step by step instructions for a net-new deployment at [this page](./samples/README.md). Please use these instructions in case you'd like to test this solution out in a sansbox environment.
 
 ## Instructions for an existing or customized deployment
 
