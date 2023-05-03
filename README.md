@@ -2,7 +2,7 @@
 
 AWS Cloud WAN is a service that you can use to build, manage, and monitor a unified global network that connects resources running across your cloud and on-premises environments. Cloud WAN ensures dynamic route propagation across multiple regions. So for a sample deployment that spans across 2 regions: you'll create VPC attachments into Cloud WAN segments. Cloud WAN will ensure that each VPC's CIDR is dynamically learned across regions. To ensure that end to end connectivity works between your VPCs, you'll need to update the routing tables of the VPCs to provide network connectivity for workloads that reside within the VPCs. This is illustrated in Figure-1 below:
 
-![Figure-1: Updating VPC routing tables](.img/Figure-1.png)
+![Figure-1: Updating VPC routing tables](./img/Figure-1.png)
 
 In this Guidance, we'll see how to automatically add (or delete) routes to VPC routing tables every time a VPC is attached into (or deleted from) a Cloud WAN segment. This will provide you with a fully automated end-to-end routing solution wherein workloads residing within VPCs have network connectivity to each other irrespective of the region where a VPC resides.
 
@@ -22,7 +22,7 @@ This solution is event driven, in that the route addition/deletion is triggered 
 
 Cloud WAN generates an event whenever a VPC attachment is created. The event has a JSON format and contains important information about the details of the VPC attachment. The structure of such an event is shown in Figure-3 below. Note that the "changeType" key has a value of "VPC_ATTACHMENT_CREATED"
 
-![Figure-3: Structure of a VPC_ATTACHMENT_CREATED event]
+![Figure-3: Structure of a VPC_ATTACHMENT_CREATED event](./img/Figure-3.png)
 
 Similarly, Cloud WAN generates an event every time a VPC is attachment is deleted. In such a case, the event's "changeType" key has a value of "VPC_ATTACHMENT_DELETED".
 
