@@ -1,11 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: CloudWAN Demo - Create VPC and Subnet
 
-Parameters:
-  VPCTagValue:
-    Description: Name of the VPC
-    Type: String
-
 Resources:
 # ---------- Lambda Role ----------  
   LambdaPolicy:
