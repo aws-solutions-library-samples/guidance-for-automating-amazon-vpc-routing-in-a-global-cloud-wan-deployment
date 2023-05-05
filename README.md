@@ -100,13 +100,23 @@ Repeat steps 3.1 and 3.2 for each of your target regions. For example, if you ha
 
 #### Step 3.1: Create regional stack in target region
 
-Deploy the regional_lambda.yaml cloudformation template in the target region. This stack deploys two resources, a regional Event Bridge rule and a Lambda function that is triggered by the rule. The Lambda function includes the necessary code for fetching the correct CIDR from IPAM, adding and removing a prefix-list from the VPC's routing table.
+Deploy the regional_lambda.yaml cloudformation template in the target Region. Provide the target-region, and the stack's name in this CLI command:
+```bash
+aws --region <target-region> cloudformation create-stack --stack-name regional-lambda-for-<target-region> --template-body file://regional_lambda.yaml 
+```
+
+This stack deploys two resources, a regional Event Bridge rule and a Lambda function that is triggered by the rule. The Lambda function includes the necessary code for fetching the correct CIDR from IPAM, adding and removing a prefix-list from the VPC's routing table.
 
 After deploying the stack, make a note of the CloudFormation output named 'EventBridgeArn'.
 
 #### Step-3.2: Deploy eventbridge_rule.yaml stack in us-west-2 region
 
-Deploy the eventbridge_rule.yaml in us-west-2 Region. This stack creates the Event Bridge rule that traps on 'VPC attachment created' and 'VPC attachment deleted' events. Cloud WAN generates events in us-west-2 which will be sent to the event bridge rule that is created by the cloudformation stack.
+Deploy the eventbridge_rule.yaml in us-west-2 Region. Provide the stack's name, and the EventBridgeArn parameter that you noted above in step# 3.1.
+```bash
+aws --region us-west-2 cloudformation create-stack --stack-name eventbridge-for-<target-region> --template-body file://eventbridge_rule.yaml --parameters RegionalEventBridgeArn=<EventBridgeArn copied from step 3.1>
+```
+
+This stack creates the Event Bridge rule that traps on 'VPC attachment created' and 'VPC attachment deleted' events. Cloud WAN generates events in us-west-2 which will be sent to the event bridge rule that is created by the cloudformation stack.
 
 ### Step-4: Create VPCs
 
@@ -114,7 +124,7 @@ Create the VPCs that where you'll create your workloads. You can optionally use 
 
 ### Step-5: Create VPC Attachments into Cloud WAN
  
-At the time of creating VPC attachments into Cloud WAN, ensure that you provide a key:value tag pair on the attachment. The tag must be in the format of:
+At the time of [creating VPC attachments](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-vpc-attachment.html) into Cloud WAN, ensure that you provide a key:value tag pair on the attachment. The tag must be in the format of:
 ```bash
 Department:<value>
 ```
