@@ -100,7 +100,7 @@ Repeat steps 3.1 and 3.2 for each of your target regions. For example, if you ha
 
 #### Step 3.1: Create regional stack in target region
 
-Deploy the regional_lambda.yaml cloudformation template in the target Region. Provide the target-region, and the stack's name in this CLI command:
+Deploy the regional_lambda.yaml CloudFormation template in the target Region. Provide the target-region, and the stack's name in this CLI command:
 ```bash
 aws --region <target-region> cloudformation create-stack --stack-name regional-lambda-for-<target-region> --template-body file://regional_lambda.yaml 
 ```
@@ -111,18 +111,25 @@ After deploying the stack, make a note of the CloudFormation output named 'Event
 
 #### Step-3.2: Deploy eventbridge_rule.yaml stack in us-west-2 region
 
-Deploy the eventbridge_rule.yaml in us-west-2 Region. Provide the stack's name, and the EventBridgeArn parameter that you noted above in step# 3.1.
+Deploy the eventbridge_rule.yaml CloudFormation template in us-west-2 Region. Provide the stack's name, and the EventBridgeArn parameter that you noted above in step# 3.1.
 ```bash
 aws --region us-west-2 cloudformation create-stack --stack-name eventbridge-for-<target-region> --template-body file://eventbridge_rule.yaml --parameters RegionalEventBridgeArn=<EventBridgeArn copied from step 3.1>
 ```
 
-This stack creates the Event Bridge rule that traps on 'VPC attachment created' and 'VPC attachment deleted' events. Cloud WAN generates events in us-west-2 which will be sent to the event bridge rule that is created by the cloudformation stack.
+This stack creates the Event Bridge rule that traps on 'VPC attachment created' and 'VPC attachment deleted' events. Cloud WAN generates events in us-west-2 which will be sent to the event bridge rule that is created by the CloudFormation stack.
 
-### Step-4: Create VPCs
+### Step-4: Deploy tracking.yaml stack in us-west-2 region
+
+Deploy the tracking.yaml CloudFormation stack in us-west-2 Region. This stack deploys an empty resource, and is used purely to track the number of deployments of this guidance.
+```bash
+aws --region us-west-2 cloudformation create-stack --stack-name tracking-stack --template-body file://tracking.yaml
+```
+
+### Step-5: Create VPCs
 
 Create the VPCs that where you'll create your workloads. You can optionally use VPC IPAM to vend out CIDRs to these VPCs. Note that this solution will work even if you don't use VPC IPAM to vend out CIDRs to the VPCs.
 
-### Step-5: Create VPC Attachments into Cloud WAN
+### Step-6: Create VPC Attachments into Cloud WAN
  
 At the time of [creating VPC attachments](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-vpc-attachment.html) into Cloud WAN, ensure that you provide a key:value tag pair on the attachment. The tag must be in the format of:
 ```bash
@@ -136,7 +143,7 @@ For example: if you created a VPC IPAM pool named 'finance', ensure that you tag
 Department:finance
 ```
 
-### Step-6: Verification
+### Step-7: Verification
 
 Navigate to VPC section on the console. Select the VPC that you connected into CloudWAN. Navigate to the VPC's main routing table. You should see a route that has a prefix list as the destination and Cloud WAN core network as the target. This is the route that this solution pushed into your VPC's routing table.
 

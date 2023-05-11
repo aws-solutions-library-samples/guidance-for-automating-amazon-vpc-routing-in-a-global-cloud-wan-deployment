@@ -1,9 +1,11 @@
 Parameters:
   EventBridgeArn:
-    Description: Arn of EventBridge
+    Description: "AWS Guidance ID (SO9220)"
     Type: String
 
 Resources:
+  EmptyResource:
+    Type: "AWS::CloudFormation::WaitConditionHandle"
 # ---------- EventBridge Rule ----------
   VPCAttachmentCreatedEventRule: 
     Type: AWS::Events::Rule
