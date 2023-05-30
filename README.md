@@ -1,6 +1,6 @@
 ## AWS Cloud WAN and VPC IPAM integration for automating VPC routing tables
 
-AWS Cloud WAN is a service that you can use to build, manage, and monitor a unified global network that connects resources running across your cloud and on-premises environments. Cloud WAN ensures dynamic route propagation across multiple regions. For a sample deployment that spans across 2 regions: you'll create VPC attachments into Cloud WAN segments. Cloud WAN will ensure that each VPC's CIDR is dynamically propagated across regions. To ensure that bi-directional connectivity works between your VPCs, you'll need to update each VPCs' routing tables to provide network connectivity for workloads that reside within the VPCs. This is illustrated in Figure-1 below:
+AWS Cloud WAN is a service that you can use to build, manage, and monitor a unified global network that connects resources running across your cloud and on-premises environments. Cloud WAN ensures dynamic route propagation across multiple regions. For a sample deployment that spans across 2 regions: you'll create VPC attachments into Cloud WAN segments. Cloud WAN will ensure that each VPC's CIDR is dynamically propagated across regions, but doesn't propagate routes within VPCs' routing tables. To ensure that bi-directional connectivity works between your VPCs, you'll need to update each VPCs' routing tables to provide network connectivity for workloads that reside within those VPCs. This is illustrated in Figure-1 below:
 
 ![Figure-1: Updating VPC routing tables](./img/Figure-1.png)
 
