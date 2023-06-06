@@ -1,3 +1,6 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: 'CloudWAN Demo - Deploy CloudWAN (SO9220)'
+
 Parameters:
   EventBridgeArn:
     Description: "AWS Guidance ID (SO9220)"

@@ -1,4 +1,5 @@
-
+AWSTemplateFormatVersion: "2010-09-09"
+Description: 'CloudWAN Demo (SO9220)'
 
 Resources:
 # ---------- IPAM ----------

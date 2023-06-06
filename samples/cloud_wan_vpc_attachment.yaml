@@ -1,5 +1,5 @@
-AWSTemplateFormatVersion: 2010-09-09
-Description: CloudWAN VPC Attachment
+AWSTemplateFormatVersion: "2010-09-09"
+Description: 'CloudWAN VPC Attachment (SO9220)'
 
 Parameters:
   VPCArn:

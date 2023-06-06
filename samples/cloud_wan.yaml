@@ -1,5 +1,5 @@
-AWSTemplateFormatVersion: 2010-09-09
-Description: CloudWAN Demo - Deploy CloudWAN
+AWSTemplateFormatVersion: "2010-09-09"
+Description: 'CloudWAN Demo - Deploy CloudWAN (SO9220)'
 
 Resources:
 # ---------- Cloud WAN Global Network ----------
